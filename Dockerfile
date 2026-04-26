@@ -1,20 +1,16 @@
-FROM node:22-bookworm-slim
+FROM node:22-alpine
+
+RUN apk add --no-cache openssl netcat-openbsd
 
 WORKDIR /app
-
-RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
 RUN npm ci
 
-COPY prisma ./prisma
-RUN npx prisma generate
-
-COPY nest-cli.json tsconfig*.json ./
-COPY src ./src
+COPY . .
 
 RUN npm run build
 
-EXPOSE 3001
+EXPOSE ${PORT}
 
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run prisma:seed && node dist/main.js"]
+CMD sh -c "until nc -z db 5432; do echo waiting for db; sleep 2; done; npx prisma migrate deploy && node dist/main.js"
