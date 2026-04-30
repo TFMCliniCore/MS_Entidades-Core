@@ -12,6 +12,9 @@ import {
 import { ClientesService } from './clientes.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
+import { UseGuards} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+
 
 @Controller('clientes')
 export class ClientesController {
@@ -46,4 +49,11 @@ export class ClientesController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.clientesService.remove(id);
   }
+  
+  @UseGuards(AuthGuard('jwt')) // <-- ESTO BLOQUEA LA RUTA
+  @Get('/clientes')
+  obtenerClientes() {
+    return this.clientesService.findAll();
+  }
+
 }

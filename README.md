@@ -21,14 +21,20 @@ Microservicio REST construido con NestJS, Prisma y PostgreSQL para administrar:
 
 ## Variables de entorno
 
-
 ```env
-PORT
-POSTGRES_USER
-POSTGRES_PASSWORD
+PORT=3001
+POSTGRES_USER=
+POSTGRES_PASSWORD=
 POSTGRES_DB=ms_entidades
 DATABASE_URL=
-```
+MAIL_HOST=
+MAIL_PORT=
+MAIL_USER=
+MAIL_PASS=
+MAIL_FROM=
+FRONTEND_URL=
+JWT_SECRET=
+JWT_EXPIRES_IN=
 
 ## Ejecución con Docker
 
@@ -102,6 +108,11 @@ Colección en json para usar endpoints:
 ```text
 postman/
   MS_Entidades_Core.postman_collection.json
+  | POST | `/api/v1/auth/register` | Crea un usuario, encripta su contraseña y envía correo de bienvenida |
+| POST | `/api/v1/auth/login` | Autentica un usuario y retorna un token JWT |
+| POST | `/api/v1/auth/forgot-password` | Envía un enlace mágico (token) para recuperar contraseña |
+| POST | `/api/v1/auth/reset-password` | Restablece la contraseña usando un token válido |
+| POST | `/api/v1/auth/change-password` | Cambia la contraseña validando la anterior |
 ```
 
 ## Datos Iniciales precargados
@@ -227,5 +238,6 @@ El metodo DELETE realiza un borrado lógico, (no elimina fisicamente: cambia el 
 
 ## Notas 
 
-- No se implementó autenticación (todavía).
-- Las contraseñas se almacenan como texto plano para esta fase inicial del proyecto. 
+- **Autenticación (Novedad):** Se integró autenticación mediante JWT. Los endpoints de la ruta `/auth` ya están operativos.
+- **Seguridad:** Las contraseñas ahora se almacenan encriptadas utilizando `bcrypt` (ya no se guardan en texto plano).
+- **Notificaciones:** Se implementó el envío asíncrono de correos electrónicos (bienvenida y recuperación de cuenta) utilizando plantillas HTML personalizadas e integración con SMTP (ej. Mailtrap).

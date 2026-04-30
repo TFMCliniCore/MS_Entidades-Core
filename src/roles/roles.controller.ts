@@ -12,6 +12,9 @@ import {
 import { CreateRolDto } from './dto/create-rol.dto';
 import { UpdateRolDto } from './dto/update-rol.dto';
 import { RolesService } from './roles.service';
+import { UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+
 
 @Controller('roles')
 export class RolesController {
@@ -22,11 +25,11 @@ export class RolesController {
     return this.rolesService.create(createRolDto);
   }
 
-  @Get()
-  findAll() {
-    return this.rolesService.findAll();
-  }
-
+ @UseGuards(AuthGuard('jwt'))
+@Get()
+findAll() {
+  return this.rolesService.findAll();
+}
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.rolesService.findOne(id);

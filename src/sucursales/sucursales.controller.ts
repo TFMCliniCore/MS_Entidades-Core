@@ -12,6 +12,10 @@ import {
 import { CreateSucursalDto } from './dto/create-sucursal.dto';
 import { UpdateSucursalDto } from './dto/update-sucursal.dto';
 import { SucursalesService } from './sucursales.service';
+import { UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+
+
 
 @Controller('sucursales')
 export class SucursalesController {
@@ -22,10 +26,11 @@ export class SucursalesController {
     return this.sucursalesService.create(createSucursalDto);
   }
 
-  @Get()
-  findAll() {
-    return this.sucursalesService.findAll();
-  }
+  @UseGuards(AuthGuard('jwt')) // Solo usuarios con token pueden ver esto
+@Get()
+findAll() {
+  return this.sucursalesService.findAll();
+}
 
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
@@ -46,4 +51,6 @@ export class SucursalesController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.sucursalesService.remove(id);
   }
+
+  
 }

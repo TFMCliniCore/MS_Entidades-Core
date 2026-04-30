@@ -6,6 +6,7 @@ import { PermisosModule } from './permisos/permisos.module';
 import { RolesModule } from './roles/roles.module';
 import { SucursalesModule } from './sucursales/sucursales.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
+import { AuthModule } from './auth/auth.module'; // 1. Importa el nuevo módulo
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { UsuariosModule } from './usuarios/usuarios.module';
     PacientesModule,
     RolesModule,
     PermisosModule,
-    SucursalesModule
+    SucursalesModule,
+    AuthModule // 2. Agrégalo a la lista de imports
   ]
 })
 export class AppModule {}

@@ -12,6 +12,9 @@ import {
 import { CreatePermisoDto } from './dto/create-permiso.dto';
 import { UpdatePermisoDto } from './dto/update-permiso.dto';
 import { PermisosService } from './permisos.service';
+import { UseGuards} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+
 
 @Controller('permisos')
 export class PermisosController {
@@ -22,10 +25,11 @@ export class PermisosController {
     return this.permisosService.create(createPermisoDto);
   }
 
-  @Get()
-  findAll() {
-    return this.permisosService.findAll();
-  }
+  @UseGuards(AuthGuard('jwt'))
+@Get()
+findAll() {
+  return this.permisosService.findAll();
+}
 
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {

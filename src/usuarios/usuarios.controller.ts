@@ -12,6 +12,8 @@ import {
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { UsuariosService } from './usuarios.service';
+import { UseGuards} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('usuarios')
 export class UsuariosController {
@@ -22,10 +24,11 @@ export class UsuariosController {
     return this.usuariosService.create(createUsuarioDto);
   }
 
-  @Get()
-  findAll() {
-    return this.usuariosService.findAll();
-  }
+  @UseGuards(AuthGuard('jwt'))
+@Get()
+findAll() {
+  return this.usuariosService.findAll();
+}
 
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
