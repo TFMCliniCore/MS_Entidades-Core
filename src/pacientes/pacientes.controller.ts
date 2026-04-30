@@ -12,6 +12,10 @@ import {
 import { CreatePacienteDto } from './dto/create-paciente.dto';
 import { UpdatePacienteDto } from './dto/update-paciente.dto';
 import { PacientesService } from './pacientes.service';
+import { UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+
+
 
 @Controller('pacientes')
 export class PacientesController {
@@ -22,10 +26,11 @@ export class PacientesController {
     return this.pacientesService.create(createPacienteDto);
   }
 
-  @Get()
-  findAll() {
-    return this.pacientesService.findAll();
-  }
+  @UseGuards(AuthGuard('jwt'))
+@Get()
+findAll() {
+  return this.pacientesService.findAll();
+}
 
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {

@@ -3,26 +3,31 @@ import { ESTADO_ACTIVO, ESTADO_INACTIVO } from '../common/constants/entity-statu
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsuariosService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createUsuarioDto: CreateUsuarioDto) {
-    await this.ensureSucursalExists(createUsuarioDto.sucursalId);
-    await this.ensureRolExists(createUsuarioDto.rolId);
+  await this.ensureSucursalExists(createUsuarioDto.sucursalId);
+  await this.ensureRolExists(createUsuarioDto.rolId);
+  
+  // 1. Generamos el hash
+  const hashedPassword = await bcrypt.hash(createUsuarioDto.contrasena, 10);
 
-    return this.prisma.usuario.create({
-      data: {
-        ...createUsuarioDto,
-        estado: ESTADO_ACTIVO
-      },
-      include: {
-        sucursal: true,
-        rol: true
-      }
-    });
-  }
+  return this.prisma.usuario.create({
+    data: {
+      ...createUsuarioDto,
+      contrasena: hashedPassword, // 2. SOBREESCRIBIMOS con la clave encriptada
+      estado: ESTADO_ACTIVO
+    },
+    include: {
+      sucursal: true,
+      rol: true
+    }
+  });
+}
 
   findAll() {
     return this.prisma.usuario.findMany({
@@ -123,4 +128,5 @@ export class UsuariosService {
       throw new NotFoundException(`No se encontro el rol con id ${id}.`);
     }
   }
+  
 }

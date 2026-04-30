@@ -8,19 +8,23 @@ datasource db {
 }
 
 model Usuario {
-  id         Int      @id @default(autoincrement())
-  nombres    String   @db.VarChar(200)
-  email      String   @unique @db.VarChar(120)
-  celular    String   @db.VarChar(15)
-  cargo      String   @db.VarChar(200)
-  roles      String   @db.VarChar(200)
-  contrasena String   @db.VarChar(50)
-  foto       String?  @db.VarChar(500)
-  estado     String   @default("ACTIVO") @db.VarChar(20)
-  sucursalId Int
-  rolId      Int
-  rol        Rol      @relation(fields: [rolId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  sucursal   Sucursal @relation(fields: [sucursalId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  id                   Int      @id @default(autoincrement())
+  nombres              String   @db.VarChar(200)
+  email                String   @unique @db.VarChar(120)
+  celular              String   @db.VarChar(15)
+  cargo                String   @db.VarChar(200)
+  roles                String   @db.VarChar(200)
+  contrasena           String   @db.VarChar(200) // Cambié 50 por 200 porque el hash de bcrypt es largo
+  foto                 String?  @db.VarChar(500)
+  estado               String   @default("ACTIVO") @db.VarChar(20)
+  sucursalId           Int
+  rolId                Int
+  rol                  Rol      @relation(fields: [rolId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  sucursal             Sucursal @relation(fields: [sucursalId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  // Campos para recuperación (sin duplicados)
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
 
   @@map("usuarios")
 }
