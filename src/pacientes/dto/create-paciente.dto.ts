@@ -35,10 +35,13 @@ export class CreatePacienteDto {
   @IsBoolean()
   castrado!: boolean;
 
-  @IsOptional()
   @IsString()
-  @MaxLength(500)
+  @IsOptional()
   foto?: string;
+
+  @IsString()
+  @IsOptional() // Opcional porque tiene un default en Prisma
+  estado?: string;
 
   @IsOptional()
   @IsDateString()

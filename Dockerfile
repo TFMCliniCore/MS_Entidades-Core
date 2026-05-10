@@ -7,6 +7,11 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
+# --- CORRECCIÓN AQUÍ ---
+# Copiamos la carpeta prisma antes de generar el cliente
+COPY prisma ./prisma/
+RUN npx prisma generate  
+
 COPY . .
 
 RUN npm run build

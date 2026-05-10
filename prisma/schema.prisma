@@ -55,7 +55,7 @@ model Paciente {
   raza              String    @db.VarChar(50)
   peso              String    @db.VarChar(20)
   castrado          Boolean   @default(false)
-  foto              String?   @db.VarChar(500)
+  foto              String?   @db.Text
   fechaNacimiento   DateTime? @db.Date
   fechaIngreso      DateTime  @db.Date
   estado            String    @default("ACTIVO") @db.VarChar(20)

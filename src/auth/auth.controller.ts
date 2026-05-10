@@ -1,15 +1,18 @@
 import { Controller, Post, Body, Patch } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ChangePasswordDto } from './dto/change-password.dto'; // Importa el DTO
+import { LoginDto } from './dto/login.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
-  async login(@Body() loginDto: { email: string; pass: string }) {
-    return this.authService.login(loginDto.email, loginDto.pass);
+  async login(@Body() loginDto: LoginDto) { 
+    return this.authService.login(loginDto.email, loginDto.password);
   }
+
+  
 
   @Post('forgot-password') // Esto define la segunda parte: /forgot-password
   async forgotPassword(@Body('email') email: string) {
@@ -32,5 +35,7 @@ async register(@Body() userData: any) {
       body.contrasenaAnterior,
       body.contrasenaNueva
     );
-    }
+}
+
+    
 }

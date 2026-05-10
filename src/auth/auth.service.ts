@@ -21,44 +21,41 @@ export class AuthService {
   ) {}
 
   // --- Lógica de Login ---
-  async login(email: string, pass: string) {
-  // Validación preventiva
-  if (!email) {
-    throw new BadRequestException('El email es requerido para iniciar sesión.');
+async login(email: string, password: string) {
+  const cleanEmail = email.trim(); 
+
+  console.log('--- DEBUG LOGIN ---');
+  console.log('Email que llega:', `"${cleanEmail}"`); 
+  console.log('Password que llega:', `"${password}"`);
+  
+  const user = await this.prisma.usuario.findUnique({ where: { email: cleanEmail } });
+  if (!user) throw new UnauthorizedException('Usuario no encontrado');
+  
+  if (!user) {
+    console.log('❌ Usuario no encontrado en la DB');
+    throw new UnauthorizedException('Usuario no encontrado');
   }
 
-  const user = await this.prisma.usuario.findUnique({
-    where: { email } // Aquí email ya no será undefined
-  });
+  console.log('Hash en la DB:', user.contrasena);
 
-  if (!user) {
+  const isMatch = await bcrypt.compare(password, user.contrasena);
+  console.log('¿Coinciden?:', isMatch);
+
+  if (!isMatch) {
+    console.log('❌ Contraseña incorrecta');
     throw new UnauthorizedException('Credenciales inválidas');
   }
 
-    // Comparamos la clave plana con el hash de la base de datos
-    const isMatch = await bcrypt.compare(pass, user.contrasena);
-    if (!isMatch) {
-      throw new UnauthorizedException('Credenciales inválidas');
-    }
+ const payload = { sub: user.id, email: user.email, role: user.rolId };
+const response = {
+  access_token: this.jwtService.sign(payload),
+  user: { id: user.id, nombres: user.nombres, email: user.email }
+};
 
-    // El "payload" es lo que viajará dentro del token
-    const payload = { 
-      sub: user.id, 
-      email: user.email,
-      role: user.rolId 
-    };
+console.log('Objeto que se enviará al Front:', response); // Mira la terminal de NestJS
+return response;
+}
 
-    return {
-      access_token: this.jwtService.sign(payload),
-      user: {
-        id: user.id,
-        nombres: user.nombres,
-        email: user.email
-      }
-    };
-  }
-
-  // En src/auth/auth.service.ts
 async forgotPassword(email: string) {
   const user = await this.prisma.usuario.findUnique({ where: { email } });
   if (!user) throw new NotFoundException('Usuario no encontrado');
@@ -78,6 +75,7 @@ async forgotPassword(email: string) {
   // 🔗 CONSTRUCCIÓN DEL LINK MÁGICO
   // En un entorno real, esta URL apuntaría a tu frontend (ej. Blazor)
   const magicLink = `http://localhost:3002/api/v1/auth/reset-password?token=${token}`;
+  
 
   // En src/auth/auth.service.ts, dentro del método forgotPassword()
   const emailTemplate = `

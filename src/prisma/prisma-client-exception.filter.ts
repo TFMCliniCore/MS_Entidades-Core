@@ -20,12 +20,16 @@ export class PrismaClientExceptionFilter implements ExceptionFilter {
       return;
     }
 
+    // 🔥 AGREGA ESTA LÍNEA AQUÍ PARA VER EL ERROR REAL EN LA CONSOLA
+    console.error('🔥 ERROR REAL DE PRISMA:', exception.code, exception.message);
+
     const ctx = host.switchToHttp();
     const responseBody = {
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      message: 'Unexpected Prisma error'
+      message: 'Unexpected Prisma error' // Este es el mensaje que veías[cite: 14]
     };
 
+    // ... el resto de tus validaciones P2002, P2025, P2003 se mantienen igual[cite: 14]
     if (exception.code === 'P2002') {
       const target = Array.isArray(exception.meta?.target)
         ? exception.meta?.target.join(', ')

@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcrypt'); 
 
 const prisma = new PrismaClient();
 const ESTADO_ACTIVO = 'ACTIVO';
@@ -250,6 +251,11 @@ async function seedPacientes(clientes, sucursales) {
 async function seedUsuarios(sucursales, roles) {
   const sucursalPorNombre = new Map(sucursales.map((sucursal) => [sucursal.nombre, sucursal.id]));
   const rolPorNombre = new Map(roles.map((rol) => [rol.nombre, rol.id]));
+  
+  // 1. Ciframos la contraseña antes de definir los usuarios
+  const saltRounds = 10;
+  const hashedAdminPassword = await bcrypt.hash('AdminVet2026', saltRounds);
+
   const usuariosBase = [
     {
       nombres: 'Ana Gomez',
@@ -257,9 +263,10 @@ async function seedUsuarios(sucursales, roles) {
       celular: '3008881100',
       cargo: 'Administradora',
       roles: 'Administrador',
-      contrasena: 'AdminVet2026',
+      // 2. Usamos la contraseña cifrada aquí
+      contrasena: hashedAdminPassword, 
       foto: 'https://picsum.photos/seed/ana-gomez/400/400',
-      estado: ESTADO_ACTIVO,
+      estado: 'ACTIVO',
       sucursalId: sucursalPorNombre.get('Sede Norte'),
       rolId: rolPorNombre.get('Administrador')
     },
@@ -289,14 +296,32 @@ async function seedUsuarios(sucursales, roles) {
     }
   ];
 
-  for (const usuario of usuariosBase) {
+  
+
+  console.log('Asignando y encriptando usuarios...');
+
+for (const usuario of usuariosBase) {
+    const passwordPlana = 'AdminVet2026'; 
+    const hashedPassword = await bcrypt.hash(passwordPlana, 10);
+    
     await prisma.usuario.upsert({
       where: { email: usuario.email },
-      update: usuario,
-      create: usuario
+      update: {
+        nombres: usuario.nombres,
+        celular: usuario.celular,
+        cargo: usuario.cargo,
+        contrasena: hashedPassword, 
+        rolId: usuario.rolId,
+        sucursalId: usuario.sucursalId
+      },
+      create: {
+        ...usuario,
+        contrasena: hashedPassword
+      }
     });
   }
-}
+} 
+
 
 async function main() {
   const permisos = await seedPermisos();
@@ -306,6 +331,7 @@ async function main() {
   await seedPacientes(clientes, sucursales);
   await seedUsuarios(sucursales, roles);
 }
+
 
 main()
   .then(async () => {

@@ -26,7 +26,7 @@ export class PacientesController {
     return this.pacientesService.create(createPacienteDto);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'))
 @Get()
 findAll() {
   return this.pacientesService.findAll();
