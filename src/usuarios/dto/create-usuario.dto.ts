@@ -22,7 +22,7 @@ export class CreateUsuarioDto {
   roles!: string;
 
   @IsString()
-  @MaxLength(50)
+  @MaxLength(100)
   contrasena!: string;
 
   @IsOptional()

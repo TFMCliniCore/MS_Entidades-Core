@@ -1,4 +1,5 @@
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { loadEnvFile } from 'node:process';
 import { ValidationPipe } from '@nestjs/common';
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
@@ -6,9 +7,10 @@ import { AppModule } from './app.module';
 import { PrismaClientExceptionFilter } from './prisma/prisma-client-exception.filter';
 
 async function bootstrap() {
-  if (existsSync('.env')) {
-    loadEnvFile();
-  }
+  if (existsSync('.env')) loadEnvFile();
+  
+  mkdirSync(join(process.cwd(), 'uploads', 'usuarios'), { recursive: true });
+
   const app = await NestFactory.create(AppModule);
   const httpAdapterHost = app.get(HttpAdapterHost);
 
