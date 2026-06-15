@@ -1,8 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { ESTADO_ACTIVO, ESTADO_INACTIVO } from '../common/constants/entity-status.constants';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateUsuarioDto } from './dto/create-usuario.dto';
-import { UpdateUsuarioDto } from './dto/update-usuario.dto';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  ESTADO_ACTIVO,
+  ESTADO_INACTIVO,
+} from "../common/constants/entity-status.constants";
+import { PrismaService } from "../prisma/prisma.service";
+import { CreateUsuarioDto } from "./dto/create-usuario.dto";
+import { UpdateUsuarioDto } from "./dto/update-usuario.dto";
+import * as bcrypt from "bcrypt";
 
 @Injectable()
 export class UsuariosService {
@@ -12,30 +16,33 @@ export class UsuariosService {
     await this.ensureSucursalExists(createUsuarioDto.sucursalId);
     await this.ensureRolExists(createUsuarioDto.rolId);
 
+    const hashed = await bcrypt.hash(createUsuarioDto.contrasena, 10);
+
     return this.prisma.usuario.create({
       data: {
         ...createUsuarioDto,
-        estado: ESTADO_ACTIVO
+        contrasena: hashed,
+        estado: ESTADO_ACTIVO,
       },
       include: {
         sucursal: true,
-        rol: true
-      }
+        rol: true,
+      },
     });
   }
 
   findAll() {
     return this.prisma.usuario.findMany({
       where: {
-        estado: ESTADO_ACTIVO
+        estado: ESTADO_ACTIVO,
       },
       include: {
         sucursal: true,
-        rol: true
+        rol: true,
       },
       orderBy: {
-        id: 'asc'
-      }
+        id: "asc",
+      },
     });
   }
 
@@ -54,13 +61,20 @@ export class UsuariosService {
       await this.ensureRolExists(updateUsuarioDto.rolId);
     }
 
+    if (updateUsuarioDto.contrasena) {
+      updateUsuarioDto.contrasena = await bcrypt.hash(
+        updateUsuarioDto.contrasena,
+        10,
+      );
+    }
+
     return this.prisma.usuario.update({
       where: { id },
       data: updateUsuarioDto,
       include: {
         sucursal: true,
-        rol: true
-      }
+        rol: true,
+      },
     });
   }
 
@@ -70,12 +84,12 @@ export class UsuariosService {
     return this.prisma.usuario.update({
       where: { id },
       data: {
-        estado: ESTADO_INACTIVO
+        estado: ESTADO_INACTIVO,
       },
       include: {
         sucursal: true,
-        rol: true
-      }
+        rol: true,
+      },
     });
   }
 
@@ -83,12 +97,12 @@ export class UsuariosService {
     const usuario = await this.prisma.usuario.findFirst({
       where: {
         id,
-        estado: ESTADO_ACTIVO
+        estado: ESTADO_ACTIVO,
       },
       include: {
         sucursal: true,
-        rol: true
-      }
+        rol: true,
+      },
     });
 
     if (!usuario) {
@@ -102,8 +116,8 @@ export class UsuariosService {
     const sucursal = await this.prisma.sucursal.findFirst({
       where: {
         id,
-        estado: ESTADO_ACTIVO
-      }
+        estado: ESTADO_ACTIVO,
+      },
     });
 
     if (!sucursal) {
@@ -115,12 +129,45 @@ export class UsuariosService {
     const rol = await this.prisma.rol.findFirst({
       where: {
         id,
-        estado: ESTADO_ACTIVO
-      }
+        estado: ESTADO_ACTIVO,
+      },
     });
 
     if (!rol) {
       throw new NotFoundException(`No se encontro el rol con id ${id}.`);
     }
+  }
+  // -- Login
+
+  async login(email: string, contrasena: string) {
+    const usuario = await this.prisma.usuario.findFirst({
+      where: { email, estado: ESTADO_ACTIVO },
+      include: { sucursal: true, rol: true },
+    });
+
+    if (!usuario) {
+      throw new NotFoundException("Credenciales incorrectas.");
+    }
+
+    const valido = await bcrypt.compare(contrasena, usuario.contrasena);
+
+    if (!valido) {
+      throw new NotFoundException("Credenciales incorrectas.");
+    }
+
+    const { contrasena: _, ...usuarioSinContrasena } = usuario;
+    return usuarioSinContrasena;
+  }
+
+  async uploadFoto(id: number, filename: string) {
+    await this.getUsuarioOrFail(id);
+    const fotoPath = `/api/v1/usuarios/foto/${filename}`;
+    const updated = await this.prisma.usuario.update({
+      where: { id },
+      data: { foto: fotoPath },
+      include: { sucursal: true, rol: true },
+    });
+    const { contrasena: _, ...usuarioSinContrasena } = updated;
+    return usuarioSinContrasena;
   }
 }
