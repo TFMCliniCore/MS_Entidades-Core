@@ -1,14 +1,13 @@
 # MS Entidades Core
 
-Microservicio REST construido con NestJS, Prisma y PostgreSQL para administrar:
+Microservicio REST construido con NestJS, Prisma y PostgreSQL para administrar las entidades principales del ecosistema CliniCore:
 
-- Usuarios
+- Usuarios (con autenticación bcrypt y subida de foto de perfil)
 - Clientes
 - Pacientes
 - Roles
 - Permisos
 - Sucursales
-
 
 ## Stack
 
@@ -17,17 +16,17 @@ Microservicio REST construido con NestJS, Prisma y PostgreSQL para administrar:
 - PostgreSQL 16
 - Docker / Docker Compose
 - TypeScript
-
+- `bcrypt` (hash de contraseñas)
+- `multer` + `diskStorage` (subida de fotos)
 
 ## Variables de entorno
 
-
 ```env
-PORT
-POSTGRES_USER
-POSTGRES_PASSWORD
+PORT=3001
+POSTGRES_USER=
+POSTGRES_PASSWORD=
 POSTGRES_DB=ms_entidades
-DATABASE_URL=
+DATABASE_URL=postgresql://user:pass@db:5432/ms_entidades
 ```
 
 ## Ejecución con Docker
@@ -38,33 +37,23 @@ docker compose up --build
 
 Servicios disponibles:
 
-- API: `http://<URL_SERVIDOR>:<PUERTO>`
-- PostgreSQL: `<URL_SERVIDOR>:<PUERTO>`
-
-Ejemplo para desarrollo:
-
 - API: `http://localhost:3001`
-- PostgreSQL: `http://localhost:5432`
+- PostgreSQL: `localhost:5432`
 
-Al iniciar el contenedor de la API se ejecutan:
+Al iniciar el contenedor se ejecutan automáticamente:
 
 1. Migraciones de Prisma
-2. Seed con iniciales
+2. Seed con datos iniciales
 3. Arranque del servidor NestJS
 
-Parar contenedor:
-
 ```bash
+# Detener contenedor
 docker compose stop
-```
 
-Detener contenedor y borrar imágenes:
-
-```bash
+# Detener y borrar volúmenes
 docker compose down -v
-```
-Construir contenedor
-```bash
+
+# Reconstruir
 docker compose up --build
 ```
 
@@ -89,41 +78,44 @@ src/
   roles/
   sucursales/
   usuarios/
+    dto/
+    usuarios.controller.ts
+    usuarios.service.ts
+    usuarios.module.ts
 prisma/
   migrations/
   schema.prisma
   seed.js
+uploads/
+  usuarios/        # Fotos de perfil almacenadas en el servidor
 postman/
   MS_Entidades_Core.postman_collection.json
 ```
 
-Colección en json para usar endpoints:
+### Persistencia de fotos
 
-```text
-postman/
-  MS_Entidades_Core.postman_collection.json
+Las fotos de perfil se almacenan en `uploads/usuarios/` dentro del contenedor. En Docker se usa un volumen nombrado `ms_entidades_uploads` para que los archivos sobrevivan reinicios:
+
+```yaml
+volumes:
+  - ms_entidades_uploads:/app/uploads
 ```
 
-## Datos Iniciales precargados
+Ruta de acceso desde el frontend: `http://localhost:3001/api/v1/usuarios/foto/<nombre_archivo>`  
+A través del Gateway: `http://localhost:3002/api/v1/usuarios/foto/<nombre_archivo>`
 
-El seed crea registros iniciales para:
+## Datos iniciales (seed)
 
-- 10 permisos
-- 3 roles
-- 2 sucursales
-- 3 clientes
-- 3 pacientes
-- 3 usuarios
+| Entidad | Cantidad |
+| --- | --- |
+| Permisos | 10 |
+| Roles | 3 (Admin id=1, Veterinario id=2, Recepcionista id=3) |
+| Sucursales | 2 |
+| Clientes | 3 |
+| Pacientes | 3 |
+| Usuarios | 3 (contraseñas hasheadas con bcrypt) |
 
 ## URL Base
-
-```text
-http://<URL_SERVIDOR>:<puerto>/api/v1
-```
-
-
-
-La variable `baseUrl` ya viene configurada como (para pruebas en desarrollo):
 
 ```text
 http://localhost:3001/api/v1
@@ -131,75 +123,177 @@ http://localhost:3001/api/v1
 
 ## Tabla de endpoints
 
-Todas las rutas usan el prefijo base `/api/v1`.
+Todas las rutas usan el prefijo `/api/v1`.
 
-| Metodo | Ruta | Descripcion |
+### Usuarios
+
+| Método | Ruta | Descripción |
 | --- | --- | --- |
-| GET | `/api/v1/usuarios` | Lista todos los usuarios |
-| GET | `/api/v1/usuarios/:id` | Obtiene un usuario por id |
-| POST | `/api/v1/usuarios` | Crea un usuario |
-| PUT | `/api/v1/usuarios/:id` | Reemplaza un usuario |
-| PATCH | `/api/v1/usuarios/:id` | Actualiza un usuario |
-| DELETE | `/api/v1/usuarios/:id` | Inactiva un usuario |
-| GET | `/api/v1/clientes` | Lista todos los clientes |
-| GET | `/api/v1/clientes/:id` | Obtiene un cliente por id |
-| POST | `/api/v1/clientes` | Crea un cliente |
-| PUT | `/api/v1/clientes/:id` | Reemplaza un cliente |
-| PATCH | `/api/v1/clientes/:id` | Actualiza un cliente |
-| DELETE | `/api/v1/clientes/:id` | Inactiva un cliente |
-| GET | `/api/v1/pacientes` | Lista todos los pacientes |
-| GET | `/api/v1/pacientes/:id` | Obtiene un paciente por id |
-| POST | `/api/v1/pacientes` | Crea un paciente |
-| PUT | `/api/v1/pacientes/:id` | Reemplaza un paciente |
-| PATCH | `/api/v1/pacientes/:id` | Actualiza un paciente |
-| DELETE | `/api/v1/pacientes/:id` | Inactiva un paciente |
-| GET | `/api/v1/roles` | Lista todos los roles |
-| GET | `/api/v1/roles/:id` | Obtiene un rol por id |
-| POST | `/api/v1/roles` | Crea un rol |
-| PUT | `/api/v1/roles/:id` | Reemplaza un rol |
-| PATCH | `/api/v1/roles/:id` | Actualiza un rol |
-| DELETE | `/api/v1/roles/:id` | Inactiva un rol |
-| GET | `/api/v1/permisos` | Lista todos los permisos |
-| GET | `/api/v1/permisos/:id` | Obtiene un permiso por id |
-| POST | `/api/v1/permisos` | Crea un permiso |
-| PUT | `/api/v1/permisos/:id` | Reemplaza un permiso |
-| PATCH | `/api/v1/permisos/:id` | Actualiza un permiso |
-| DELETE | `/api/v1/permisos/:id` | Inactiva un permiso |
-| GET | `/api/v1/sucursales` | Lista todas las sucursales |
-| GET | `/api/v1/sucursales/:id` | Obtiene una sucursal por id |
-| POST | `/api/v1/sucursales` | Crea una sucursal |
-| PUT | `/api/v1/sucursales/:id` | Reemplaza una sucursal |
-| PATCH | `/api/v1/sucursales/:id` | Actualiza una sucursal |
-| DELETE | `/api/v1/sucursales/:id` | Inactiva una sucursal |
+| GET | `/usuarios` | Lista todos los usuarios activos |
+| GET | `/usuarios/:id` | Obtiene un usuario por id |
+| POST | `/usuarios` | Crea un usuario (contrasena se hashea con bcrypt) |
+| PUT | `/usuarios/:id` | Reemplaza un usuario completo |
+| PATCH | `/usuarios/:id` | Actualiza campos del usuario |
+| DELETE | `/usuarios/:id` | Borrado lógico (estado → INACTIVO) |
+| POST | `/usuarios/login` | Valida credenciales con bcrypt y devuelve usuario |
+| POST | `/usuarios/:id/foto` | Sube foto de perfil (multipart/form-data, máx. 3 MB) |
+| GET | `/usuarios/foto/:filename` | Sirve el archivo de foto almacenado |
 
-Las eliminaciones de clientes, sucursales y roles se bloquean cuando existen relaciones activas.
-Las operaciones GET, PUT y PATCH solo trabajan con registros en estado `ACTIVO`.
-El metodo DELETE realiza un borrado lógico, (no elimina fisicamente: cambia el campo `estado` a `INACTIVO`).
+### Clientes
+
+| Método | Ruta | Descripción |
+| --- | --- | --- |
+| GET | `/clientes` | Lista todos los clientes activos |
+| GET | `/clientes/:id` | Obtiene un cliente por id |
+| POST | `/clientes` | Crea un cliente |
+| PUT | `/clientes/:id` | Reemplaza un cliente |
+| PATCH | `/clientes/:id` | Actualiza un cliente |
+| DELETE | `/clientes/:id` | Borrado lógico |
+
+### Pacientes
+
+| Método | Ruta | Descripción |
+| --- | --- | --- |
+| GET | `/pacientes` | Lista todos los pacientes activos |
+| GET | `/pacientes/:id` | Obtiene un paciente por id |
+| POST | `/pacientes` | Crea un paciente |
+| PUT | `/pacientes/:id` | Reemplaza un paciente |
+| PATCH | `/pacientes/:id` | Actualiza un paciente |
+| DELETE | `/pacientes/:id` | Borrado lógico |
+
+### Roles
+
+| Método | Ruta | Descripción |
+| --- | --- | --- |
+| GET | `/roles` | Lista todos los roles |
+| GET | `/roles/:id` | Obtiene un rol por id |
+| POST | `/roles` | Crea un rol |
+| PUT | `/roles/:id` | Reemplaza un rol |
+| PATCH | `/roles/:id` | Actualiza un rol |
+| DELETE | `/roles/:id` | Borrado lógico |
+
+### Permisos
+
+| Método | Ruta | Descripción |
+| --- | --- | --- |
+| GET | `/permisos` | Lista todos los permisos |
+| GET | `/permisos/:id` | Obtiene un permiso por id |
+| POST | `/permisos` | Crea un permiso |
+| PUT | `/permisos/:id` | Reemplaza un permiso |
+| PATCH | `/permisos/:id` | Actualiza un permiso |
+| DELETE | `/permisos/:id` | Borrado lógico |
+
+### Sucursales
+
+| Método | Ruta | Descripción |
+| --- | --- | --- |
+| GET | `/sucursales` | Lista todas las sucursales |
+| GET | `/sucursales/:id` | Obtiene una sucursal por id |
+| POST | `/sucursales` | Crea una sucursal |
+| PUT | `/sucursales/:id` | Reemplaza una sucursal |
+| PATCH | `/sucursales/:id` | Actualiza una sucursal |
+| DELETE | `/sucursales/:id` | Borrado lógico |
+
+## Reglas de negocio
+
+- Las eliminaciones de clientes, sucursales y roles se bloquean cuando existen relaciones activas.
+- GET, PUT y PATCH solo operan sobre registros en estado `ACTIVO`.
+- DELETE realiza borrado lógico (campo `estado` → `INACTIVO`), no elimina el registro físicamente.
+- Las contraseñas se almacenan como hash bcrypt (10 rondas). El campo `contrasena` es `VarChar(100)`.
+- La foto de perfil actualiza el campo `foto` del usuario con la ruta relativa `/api/v1/usuarios/foto/<archivo>`.
 
 ## Ejemplos de payload
+
+### Login
+
+```json
+POST /usuarios/login
+
+{
+  "email": "admin@clinicavet.test",
+  "contrasena": "MiContrasena123"
+}
+```
+
+Respuesta exitosa (el API Gateway llama este endpoint internamente):
+
+```json
+{
+  "id": 1,
+  "nombres": "Administrador Principal",
+  "email": "admin@clinicavet.test",
+  "celular": "3001234567",
+  "cargo": "Administrador",
+  "foto": "/api/v1/usuarios/foto/usuario_1_abc123.jpg",
+  "rolId": 1,
+  "sucursalId": 1,
+  "rol": { "id": 1, "nombre": "Admin", "descripcion": "..." },
+  "sucursal": { "id": 1, "nombre": "Sede Central" }
+}
+```
 
 ### Crear usuario
 
 ```json
+POST /usuarios
+
 {
   "nombres": "Juliana Torres",
   "email": "juliana.torres@clinicavet.test",
   "celular": "3005557788",
   "cargo": "Veterinaria",
-  "roles": "Veterinario",
   "contrasena": "ClaveTemporal2026",
-  "foto": "https://picsum.photos/seed/juliana/400/400",
   "sucursalId": 1,
   "rolId": 2
+}
+```
+
+> La contraseña se hashea automáticamente con bcrypt antes de guardarse.
+
+### Actualizar usuario (campos editables desde el perfil)
+
+```json
+PATCH /usuarios/1
+
+{
+  "nombres": "Juliana Torres Mejía",
+  "celular": "3005557799",
+  "rolId": 2,
+  "cargo": "Veterinario",
+  "contrasena": "NuevaClave2026"
+}
+```
+
+> Si `contrasena` se omite o es vacío, la contraseña no cambia.
+
+### Subir foto de perfil
+
+```
+POST /usuarios/1/foto
+Content-Type: multipart/form-data
+
+Campo: foto  →  archivo imagen (JPG / PNG / WebP, máx. 3 MB)
+```
+
+Respuesta:
+
+```json
+{
+  "id": 1,
+  "nombres": "Juliana Torres",
+  "foto": "/api/v1/usuarios/foto/usuario_1_1748970000000.jpg",
+  ...
 }
 ```
 
 ### Crear paciente
 
 ```json
+POST /pacientes
+
 {
   "nombre": "Toby",
-  "edad": "2 anos",
+  "edad": "2 años",
   "sexo": "Macho",
   "especie": "Canino",
   "raza": "Labrador",
@@ -218,14 +312,11 @@ El metodo DELETE realiza un borrado lógico, (no elimina fisicamente: cambia el 
 ### Crear rol
 
 ```json
+POST /roles
+
 {
   "nombre": "Auditor",
-  "descripcion": "Consulta informacion operativa sin editar datos.",
+  "descripcion": "Consulta información operativa sin editar datos.",
   "permisoIds": [1, 3, 5, 9]
 }
 ```
-
-## Notas 
-
-- No se implementó autenticación (todavía).
-- Las contraseñas se almacenan como texto plano para esta fase inicial del proyecto. 
