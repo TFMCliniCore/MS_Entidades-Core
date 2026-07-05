@@ -137,8 +137,8 @@ export class UsuariosService {
       throw new NotFoundException(`No se encontro el rol con id ${id}.`);
     }
   }
-  // -- Login
 
+  // -- Login Modificado (Soporta texto plano del seed y hashes de bcrypt)
   async login(email: string, contrasena: string) {
     const usuario = await this.prisma.usuario.findFirst({
       where: { email, estado: ESTADO_ACTIVO },
@@ -149,9 +149,21 @@ export class UsuariosService {
       throw new NotFoundException("Credenciales incorrectas.");
     }
 
-    const valido = await bcrypt.compare(contrasena, usuario.contrasena);
+    // 1. Intentamos comparar directo en texto plano (para usuarios del seed)
+    const esTextoPlanoValido = usuario.contrasena === contrasena;
+    
+    // 2. Si no coincide, intentamos verificarlo como un hash de bcrypt (para usuarios nuevos del sistema)
+    let esHashValido = false;
+    if (!esTextoPlanoValido) {
+      try {
+        esHashValido = await bcrypt.compare(contrasena, usuario.contrasena);
+      } catch (error) {
+        esHashValido = false; // Evita que caiga la app si el string de la BD no es un hash válido
+      }
+    }
 
-    if (!valido) {
+    // Si ambas comprobaciones fallan, lanzamos la excepción
+    if (!esTextoPlanoValido && !esHashValido) {
       throw new NotFoundException("Credenciales incorrectas.");
     }
 
