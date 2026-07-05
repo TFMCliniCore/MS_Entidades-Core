@@ -16,4 +16,4 @@ RUN npm run build
 
 EXPOSE ${PORT}
 
-CMD sh -c "until nc -z db 5432; do echo waiting for db; sleep 2; done; npx prisma migrate deploy && node dist/main.js"
+CMD sh -c "until nc -z db 5432; do echo waiting for db; sleep 2; done; npx prisma migrate deploy && npm run prisma:seed && node dist/main.js"
