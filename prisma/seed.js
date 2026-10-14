@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcrypt');
 
 const prisma = new PrismaClient();
 const ESTADO_ACTIVO = 'ACTIVO';
@@ -290,10 +291,12 @@ async function seedUsuarios(sucursales, roles) {
   ];
 
   for (const usuario of usuariosBase) {
+    const contrasenaHash = await bcrypt.hash(usuario.contrasena, 10);
+    const usuarioConHash = { ...usuario, contrasena: contrasenaHash };
     await prisma.usuario.upsert({
       where: { email: usuario.email },
-      update: usuario,
-      create: usuario
+      update: usuarioConHash,
+      create: usuarioConHash
     });
   }
 }
